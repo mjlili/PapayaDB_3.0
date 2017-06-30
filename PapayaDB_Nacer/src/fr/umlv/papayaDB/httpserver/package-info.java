@@ -1,5 +1,5 @@
 /**
- * @author DERGAL Nacer LEROUX Gwenael
+ * @author JLILI Mohamed Kacem & REZGUI Ichrak
  *
  */
 package fr.umlv.papayaDB.httpserver;

@@ -3,7 +3,7 @@ package fr.umlv.papayaDB.utils;
 import java.util.Base64;
 
 /**
- * @author DERGAL Nacer LEROUX Gwenael
+ * @author JLILI Mohamed Kacem & REZGUI Ichrak
  *
  */
 public class Decoder {

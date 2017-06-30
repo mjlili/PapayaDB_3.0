@@ -18,7 +18,7 @@ import javax.net.ssl.HttpsURLConnection;
 import fr.umlv.papayaDB.utils.Decoder;
 
 /**
- * @author DERGAL Nacer LEROUX Gwenael
+ * @author JLILI Mohamed Kacem & REZGUI Ichrak
  *
  */
 public class ApiClient {

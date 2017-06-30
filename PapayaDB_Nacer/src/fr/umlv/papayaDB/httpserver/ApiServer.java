@@ -22,27 +22,11 @@ import io.vertx.ext.web.handler.StaticHandler;
 // --add-exports java.base/sun.net.dns=ALL-UNNAMED
 // ExampleApp
 /**
- * @author DERGAL Nacer LEROUX Gwenael
+ * @author JLILI Mohamed Kacem & REZGUI Ichrak
  *
  */
 public class ApiServer extends AbstractVerticle {
-	// private final URI httpUri;
-	// private final URI httpsUri;
 	private final DataBaseManagementSystem databaseManager = new DataBaseManagementSystem();
-
-	// /**
-	// * Constructeur de l'API Cliente
-	// *
-	// * @param uri
-	// * Adresse du serveur de BDD a requeter
-	// * @throws URISyntaxException
-	// * si l'URI est mal forme
-	// */
-	// public ApiServer(String uri) throws URISyntaxException {
-	// Objects.requireNonNull(uri);
-	// this.httpUri = new URI("http://" + uri + ":8060");
-	// this.httpsUri = new URI("https://" + uri + ":8050");
-	// }
 
 	/**
 	 * demarrer les serveurs HTTP sur le port 8080 et HTTPS sur le port 8070
@@ -78,18 +62,6 @@ public class ApiServer extends AbstractVerticle {
 	}
 
 	private void getAllDatabases(RoutingContext routingContext) {
-		// HttpResponse response;
-		// try {
-		// response = HttpClient.getDefault().request(httpUri.resolve("/all"))
-		// .headers("Accept-Language", "en-US,en;q=0.5", "Connection",
-		// "Close").GET().response();
-		// routingContext.response().setStatusCode(response.statusCode()).putHeader("content-type",
-		// "application/json")
-		// .end(response.body(HttpResponse.asString()));
-		// } catch (IOException | InterruptedException e) {
-		// routingContext.response().setStatusCode(401).end();
-		// }
-
 		try {
 			routingContext.response().setStatusCode(200).putHeader("content-type", "application/json")
 					.end(databaseManager.getAllDatabases().map(Json::encodePrettily).collect(joining(", ", "[", "]")));
@@ -99,20 +71,6 @@ public class ApiServer extends AbstractVerticle {
 	}
 
 	private void insertDocumentIntoDatabase(RoutingContext routingContext) {
-		// HttpResponse response;
-		// try {
-		// response = HttpClient.getDefault()
-		// .request(httpUri.resolve("/insert/" +
-		// routingContext.request().getParam("name")))
-		// .headers("Accept-Language", "en-US,en;q=0.5", "Connection", "Close")
-		// .body(HttpRequest.fromString(routingContext.getBodyAsString())).PUT().response();
-		// routingContext.response().setStatusCode(response.statusCode()).putHeader("content-type",
-		// "application/json")
-		// .end();
-		// } catch (IOException | InterruptedException e) {
-		// routingContext.response().setStatusCode(401).end();
-		// }
-
 		try {
 			routingContext.response().setStatusCode(201).putHeader("content-type", "application/json")
 					.end(databaseManager
@@ -125,20 +83,6 @@ public class ApiServer extends AbstractVerticle {
 	}
 
 	private void createDatabase(RoutingContext routingContext) {
-		// HttpResponse response;
-		// try {
-		// response = HttpClient.getDefault()
-		// .request(httpsUri.resolve("/createdatabase/" +
-		// routingContext.request().getParam("name")))
-		// .headers("Accept-Language", "en-US,en;q=0.5", "Connection", "Close",
-		// "Authorization",
-		// routingContext.request().headers().get(HttpHeaders.AUTHORIZATION))
-		// .POST().response();
-		// routingContext.response().setStatusCode(response.statusCode()).end();
-		// } catch (IOException | InterruptedException e) {
-		// routingContext.response().setStatusCode(401).end();
-		// }
-
 		if (isAuthentified(routingContext.request())) {
 			try {
 				routingContext.response().setStatusCode(201).putHeader("content-type", "application/json")
@@ -155,20 +99,6 @@ public class ApiServer extends AbstractVerticle {
 	}
 
 	private void getDocumentByCriteria(RoutingContext routingContext) {
-		// HttpResponse response;
-		// try {
-		// response = HttpClient.getDefault()
-		// .request(httpUri.resolve("/get/" +
-		// routingContext.request().getParam("name")))
-		// .headers("Accept-Language", "en-US,en;q=0.5", "Connection", "Close")
-		// .body(HttpRequest.fromString(routingContext.getBodyAsString())).GET().response();
-		// routingContext.response().setStatusCode(response.statusCode()).putHeader("content-type",
-		// "application/json")
-		// .end(response.body(HttpResponse.asString()));
-		// } catch (IOException | InterruptedException e) {
-		// routingContext.response().setStatusCode(401).end();
-		// }
-		//
 		try {
 			routingContext.response().setStatusCode(201).putHeader("content-type", "application/json")
 					.end(databaseManager
@@ -181,27 +111,6 @@ public class ApiServer extends AbstractVerticle {
 	}
 
 	private void dropDocumentByName(RoutingContext routingContext) {
-		// try {
-		// HttpURLConnection httpCon = (HttpURLConnection) httpsUri
-		// .resolve("/drop/" +
-		// routingContext.request().getParam("name")).toURL().openConnection();
-		// httpCon.setRequestProperty("Accept-Language", "en-US,en;q=0.5");
-		// httpCon.setRequestProperty("Connection", "Close");
-		// httpCon.setRequestMethod("DELETE");
-		// httpCon.setDoOutput(true);
-		// DataOutputStream wr = new
-		// DataOutputStream(httpCon.getOutputStream());
-		// wr.writeBytes(routingContext.getBodyAsString());
-		// wr.flush();
-		// wr.close();
-		// routingContext.response().setStatusCode(httpCon.getResponseCode())
-		// .putHeader("content-type", "application/json").end();
-		// httpCon.disconnect();
-		// } catch (IOException e) {
-		// routingContext.response().setStatusCode(401).putHeader("content-type",
-		// "application/json").end();
-		// }
-
 		try {
 			routingContext.response().setStatusCode(201).putHeader("content-type", "application/json")
 					.end(databaseManager
@@ -214,20 +123,6 @@ public class ApiServer extends AbstractVerticle {
 	}
 
 	private void getDatabase(RoutingContext routingContext) {
-		// HttpResponse response;
-		// try {
-		// response = HttpClient.getDefault()
-		// .request(httpsUri.resolve("/getdatabase/" +
-		// routingContext.request().getParam("name")))
-		// .headers("Accept-Language", "en-US,en;q=0.5", "Connection",
-		// "Close").GET().response();
-		// routingContext.response().setStatusCode(response.statusCode()).putHeader("content-type",
-		// "application/json")
-		// .end(response.body(HttpResponse.asString()));
-		// } catch (IOException | InterruptedException e) {
-		// routingContext.response().setStatusCode(401).end();
-		// }
-
 		try {
 			routingContext.response().setStatusCode(200).putHeader("content-type", "application/json")
 					.end(databaseManager.getDatabase(routingContext.request().getParam("name"))
@@ -239,28 +134,11 @@ public class ApiServer extends AbstractVerticle {
 	}
 
 	private void dropDatabase(RoutingContext routingContext) {
-		// try {
-		// HttpsURLConnection httpCon = (HttpsURLConnection) httpsUri
-		// .resolve("/dropdatabase/" +
-		// routingContext.request().getParam("name")).toURL().openConnection();
-		// httpCon.setRequestProperty("Accept-Language", "en-US,en;q=0.5");
-		// httpCon.setRequestProperty("Connection", "Close");
-		// httpCon.setRequestMethod("DELETE");
-		// httpCon.setRequestProperty("Authorization",
-		// routingContext.request().headers().get(HttpHeaders.AUTHORIZATION));
-		// httpCon.setDoOutput(true);
-		// routingContext.response().setStatusCode(httpCon.getResponseCode())
-		// .putHeader("content-type", "application/json").end();
-		// httpCon.disconnect();
-		// } catch (IOException e) {
-		// routingContext.response().setStatusCode(401).putHeader("content-type",
-		// "application/json").end();
-		// }
 		if (isAuthentified(routingContext.request())) {
 			try {
 				routingContext.response().setStatusCode(200).putHeader("content-type", "application/json")
-						.end(databaseManager.dropDatabase(routingContext.request().getParam("name")).map(Json::encodePrettily)
-								.collect(joining(", ", "[", "]")));
+						.end(databaseManager.dropDatabase(routingContext.request().getParam("name"))
+								.map(Json::encodePrettily).collect(joining(", ", "[", "]")));
 			} catch (IOException e) {
 				routingContext.response().setStatusCode(500).putHeader("content-type", "application/json").end();
 			}
