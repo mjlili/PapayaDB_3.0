@@ -24,7 +24,7 @@ import fr.umlv.papayaDB.utils.Decoder;
 public class ApiClient {
 	private final URI httpUri;
 	private final URI httpsUri;
-	private static final String SERVER_ADDRESS = "localhost";
+	static final String SERVER_ADDRESS = "localhost";
 
 	@Target(ElementType.METHOD)
 	@Retention(RetentionPolicy.RUNTIME)
