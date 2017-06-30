@@ -1,4 +1,4 @@
-package fr.umlv.papayaDB.httpserver;
+package fr.umlv.papayaDB.apiServer;
 
 import io.vertx.core.Vertx;
 

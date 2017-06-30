@@ -2,4 +2,4 @@
  * @author JLILI Mohamed Kacem & REZGUI Ichrak
  *
  */
-package fr.umlv.papayaDB.httpserver;
+package fr.umlv.papayaDB.apiServer;

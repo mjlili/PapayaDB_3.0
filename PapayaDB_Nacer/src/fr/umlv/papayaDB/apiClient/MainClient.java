@@ -1,4 +1,4 @@
-package fr.umlv.papayaDB.apiclient;
+package fr.umlv.papayaDB.apiClient;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -7,7 +7,7 @@ import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.Scanner;
 
-import fr.umlv.papayaDB.apiclient.ApiClient.DBQuery;
+import fr.umlv.papayaDB.apiClient.ApiClient.DBQuery;
 
 public class MainClient {
 

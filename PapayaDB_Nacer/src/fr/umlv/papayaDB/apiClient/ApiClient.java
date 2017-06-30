@@ -1,4 +1,4 @@
-package fr.umlv.papayaDB.apiclient;
+package fr.umlv.papayaDB.apiClient;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
