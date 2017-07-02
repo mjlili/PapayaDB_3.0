@@ -23,7 +23,7 @@ public interface Queryable {
 	 * @return a Stream containing all documents of the database
 	 * @throws IOException if the database doesn't exist
 	 */
-	public Stream<Document> getDatabase(String name) throws IOException;
+	public Stream<Document> getDatabaseDocuments(String name) throws IOException;
 	
 	/**
 	 * Drop the database corresponding to the name

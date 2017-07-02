@@ -125,7 +125,7 @@ public class ApiServer extends AbstractVerticle {
 	private void getDatabase(RoutingContext routingContext) {
 		try {
 			routingContext.response().setStatusCode(200).putHeader("content-type", "application/json")
-					.end(databaseManager.getDatabase(routingContext.request().getParam("name"))
+					.end(databaseManager.getDatabaseDocuments(routingContext.request().getParam("name"))
 							.map(Json::encodePrettily).collect(joining(", ", "[", "]")));
 		} catch (IOException e) {
 
