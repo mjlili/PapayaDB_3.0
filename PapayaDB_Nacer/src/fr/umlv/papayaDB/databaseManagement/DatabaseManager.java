@@ -22,7 +22,7 @@ public class DatabaseManager implements Queryable {
 
 	private class DatabaseInMemory {
 		Database database;
-		private Thread thread = unloadUnusedDatabase();
+		private Thread thread = unloadNotUsedDatabases();
 
 		DatabaseInMemory(String databaseName) throws IOException {
 			this.database = new Database(databaseName);
@@ -38,7 +38,7 @@ public class DatabaseManager implements Queryable {
 			thread.interrupt();
 		}
 
-		private Thread unloadUnusedDatabase() {
+		private Thread unloadNotUsedDatabases() {
 			return new Thread(() -> {
 				for (boolean done = true; done == true;) {
 					try {
@@ -159,8 +159,9 @@ public class DatabaseManager implements Queryable {
 	}
 
 	private void saveDatabaseOnDisk(String databaseName) throws IOException {
-		if (Paths.get(PATH_OF_DATABASE_DIRECTORY + databaseName + "/").toFile().exists())
+		if (Paths.get(PATH_OF_DATABASE_DIRECTORY + databaseName + "/").toFile().exists()) {
 			throw new IllegalArgumentException("La base de données " + databaseName + " existe déjà");
+		}
 		Files.createDirectories(Paths.get(PATH_OF_DATABASE_DIRECTORY + databaseName + "/"));
 		Files.createFile(Paths.get(PATH_OF_DATABASE_DIRECTORY + databaseName + "/" + databaseName + ".db"));
 	}
@@ -184,6 +185,7 @@ public class DatabaseManager implements Queryable {
 		if (databaseInMemory == null) {
 			databasesInMemory.put(databaseName, new DatabaseInMemory(databaseName));
 		}
+		databaseInMemory = databasesInMemory.get(databaseName);
 		System.out.println("DATABASE IN MEMORY : " + databaseInMemory.database.databaseName);
 		return databaseInMemory.useDatabase();
 	}
@@ -224,6 +226,7 @@ public class DatabaseManager implements Queryable {
 	public Stream<Document> insertDocumentIntoDatabase(String databaseName, JsonObject documentContent)
 			throws IOException {
 		if (PapayaUtils.databaseExists(databaseName)) {
+			System.err.println("DOCUMENT CONTENT : \n" + documentContent);
 			getDatabase(databaseName).insertDocument(documentContent);
 		} else {
 			throw new IllegalArgumentException("Tha requested database does not exist");

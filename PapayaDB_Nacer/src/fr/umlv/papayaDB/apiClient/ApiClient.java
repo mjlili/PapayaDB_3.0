@@ -1,7 +1,9 @@
 package fr.umlv.papayaDB.apiClient;
 
+import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -12,11 +14,15 @@ import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.file.Paths;
+import java.util.List;
 
 import javax.net.ssl.HttpsURLConnection;
 
+import com.fasterxml.jackson.core.JsonParseException;
+
 import fr.umlv.papayaDB.utils.Decoder;
+import fr.umlv.papayaDB.utils.PapayaUtils;
+import io.vertx.core.json.JsonObject;
 
 /**
  * @author JLILI Mohamed Kacem & REZGUI Ichrak
@@ -66,21 +72,35 @@ public class ApiClient {
 		return "FAILED : No databases to display";
 	}
 
+	// IL FAUT REGARDER COMMENT CORRIGER LE PROBLèME
 	@DatabaseQuery("UPLOAD FILE")
 	public String uploadFileContent(String databaseName, String filePath) {
+		List<JsonObject> jsonObjects;
+		byte[] bytes;
+		try {
+			jsonObjects = PapayaUtils.extractJsonObjectsFromFile(filePath);
+			ByteArrayOutputStream bos = new ByteArrayOutputStream();
+			ObjectOutputStream oos = new ObjectOutputStream(bos);
+			oos.writeObject(jsonObjects);
+			bytes = bos.toByteArray();
+		} catch (JsonParseException e1) {
+			return "Json File content is currupted";
+		} catch (IOException e1) {
+			e1.printStackTrace();
+			return "Internal error reading input file";
+		}
+
 		HttpResponse response;
 		try {
 			response = HttpClient.getDefault().request(httpUri.resolve("/uploadfile/" + databaseName))
 					.headers("Accept-Language", "en-US,en;q=0.5", "Connection", "Close")
-					.body(HttpRequest.fromFile(Paths.get(new URI(filePath)))).POST().response();
+					.body(HttpRequest.fromByteArray(bytes)).PUT().response();
 			if (response.statusCode() == 201) {
 				return "success";
 			}
 			return "failed";
 		} catch (IOException | InterruptedException e) {
 			return "Request failed";
-		} catch (URISyntaxException e) {
-			return "The specified path is not correct";
 		}
 	}
 

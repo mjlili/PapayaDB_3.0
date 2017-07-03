@@ -9,6 +9,7 @@ import java.util.List;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MappingIterator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -18,6 +19,7 @@ public class PapayaUtils {
 
 	public static List<JsonObject> extractJsonObjectsFromFile(String file) throws JsonParseException, IOException {
 		ObjectMapper mapper = new ObjectMapper();
+		mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 		List<JsonObject> documents = new LinkedList<JsonObject>();
 		JsonParser jsonParser = new JsonFactory().createParser(new File(file));
 		MappingIterator<JsonObject> jsonObjectsIterator = mapper.readValues(jsonParser, JsonObject.class);

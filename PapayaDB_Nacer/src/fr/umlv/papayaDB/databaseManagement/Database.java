@@ -33,13 +33,13 @@ public class Database {
 	/**
 	 * Constructor
 	 * 
-	 * @param nameOfDatabase
+	 * @param databaseName
 	 *            = the name of the database
 	 * @throws IOException
 	 *             if it'snt possible to load the database
 	 */
-	public Database(String nameOfDatabase) throws IOException {
-		this.databaseName = nameOfDatabase;
+	public Database(String databaseName) throws IOException {
+		this.databaseName = databaseName;
 		documents = loadDatabase();
 		loadIndexes();
 		launchThreadDelete();
@@ -80,7 +80,7 @@ public class Database {
 			List<Document> newDocs = new CopyOnWriteArrayList<>();
 			documents.stream().filter(x -> !x.isDelete()).forEach(x -> {
 				try {
-					addDocumentInPhysicalStorage(x);
+					addDocumentOnDisk(x);
 					newDocs.add(x);
 				} catch (IOException e) {
 				}
@@ -142,13 +142,13 @@ public class Database {
 			int indexOfDocument = Integer.valueOf(value.toString());
 			documents.forEach(x -> {
 				if (((int) x.getValues().get("indexOfDocument").getValue()) == indexOfDocument)
-					addADocInAIndex(index, x, fieldIndex);
+					addDocumentAtIndex(index, x, fieldIndex);
 			});
 		}
 		indexes.put(fieldIndex, index);
 	}
 
-	private void addADocInAIndex(TreeMap<Object, List<Document>> index, Document doc, String fieldIndex) {
+	private void addDocumentAtIndex(TreeMap<Object, List<Document>> index, Document doc, String fieldIndex) {
 		GenericValue value = doc.getValues().get(fieldIndex);
 		if (!(index.containsKey(value.getValue()))) {
 			index.put(value.getValue(), new CopyOnWriteArrayList<>());
@@ -210,7 +210,7 @@ public class Database {
 				doc.getValues().forEach((a, b) -> {
 					dropADocInAIndex(indexes.get(a), doc, a);
 					try {
-						updateIndexInPhysicalStorage(a);
+						updateIndexOnDisk(a);
 					} catch (IOException e) {
 					}
 				});
@@ -230,30 +230,30 @@ public class Database {
 	 */
 	public void insertDocument(JsonObject documentContent) throws IOException {
 		synchronized (indexes) {
-			if (!documentContent.containsKey("name_doc"))
-				throw new IllegalArgumentException("the body must contains the name_doc field");
+			// if (!documentContent.containsKey("name_doc"))
+			// throw new IllegalArgumentException("the body must contains the name_doc field");
 			Document document = Parser.parseJSONToDocument(documentContent);
-			document.getValues().put("indexOfDocument", new IntegerValue(Integer.toString(documents.size() + 1)));
+			document.getValues().put("documentIndex", new IntegerValue(Integer.toString(documents.size() + 1)));
 			documents.add(document);
 			document.getValues().forEach((x, y) -> {
 				if (!indexes.containsKey(x))
 					indexes.put(x, new TreeMap<>());
-				addADocInAIndex(indexes.get(x), document, x);
+				addDocumentAtIndex(indexes.get(x), document, x);
 				try {
-					updateIndexInPhysicalStorage(x);
+					updateIndexOnDisk(x);
 				} catch (IOException e) {
 				}
 			});
-			addDocumentInPhysicalStorage(document);
+			addDocumentOnDisk(document);
 		}
 	}
 
-	private void addDocumentInPhysicalStorage(Document doc) throws IOException {
+	private void addDocumentOnDisk(Document doc) throws IOException {
 		String s = Parser.getStringToDocument(doc);
 		databaseFileChannel.write(ByteBuffer.wrap(s.getBytes()));
 	}
 
-	private void updateIndexInPhysicalStorage(String indexName) throws IOException {
+	private void updateIndexOnDisk(String indexName) throws IOException {
 		Files.createFile(Paths.get(
 				DatabaseManager.PATH_OF_DATABASE_DIRECTORY + databaseName + "/" + "tmpindex_" + indexName));
 		try (RandomAccessFile raf = new RandomAccessFile(
@@ -278,7 +278,7 @@ public class Database {
 	private String getStringOfIndex(String indexName) {
 		StringBuilder sb = new StringBuilder();
 		indexes.get(indexName).forEach((x, y) -> {
-			y.forEach(d -> sb.append(d.getValues().get("indexOfDocument").getValue()).append(","));
+			y.forEach(d -> sb.append(d.getValues().get("documentIndex").getValue()).append(","));
 		});
 		sb.setLength(sb.length() - 1);
 		return sb.toString();

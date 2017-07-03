@@ -71,6 +71,7 @@ public class MainClient {
 						System.out.println("request wrong unrecognize, please respect the syntax.");
 					}
 				} catch (IllegalArgumentException | IndexOutOfBoundsException e) {
+					e.printStackTrace();
 					System.out.println("Should not Happen ");
 				}
 			}

@@ -44,8 +44,8 @@ public class ApiServer extends AbstractVerticle {
 		routerHttp.get("/get/:databaseName").handler(this::getDocumentByCriteria);
 		routerHttps.get("/getdatabase/:databaseName").handler(this::getDatabase);
 		routerHttps.post("/createdatabase/:databaseName").handler(this::createDatabase);
-		routerHttps.post("/uploadfile/:databaseName").handler(this::uploadFile);
 		routerHttp.put("/insert/:databaseName").handler(this::insertDocumentIntoDatabase);
+		routerHttp.put("/uploadfile/:databaseName").handler(this::uploadFile);
 		routerHttp.delete("/drop").handler(this::dropDocumentByName);
 		routerHttps.delete("/dropdatabase/:databaseName").handler(this::dropDatabase);
 
