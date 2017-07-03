@@ -40,8 +40,8 @@ public class Database {
 	 */
 	public Database(String nameOfDatabase) throws IOException {
 		this.databaseName = nameOfDatabase;
-		documents = loadDB();
-		loadIndexs();
+		documents = loadDatabase();
+		loadIndexes();
 		launchThreadDelete();
 	}
 
@@ -103,14 +103,14 @@ public class Database {
 	 * @throws IOException
 	 *             if it is not possible to find the database repository or file
 	 */
-	public List<Document> loadDB() throws IOException {
+	public List<Document> loadDatabase() throws IOException {
 		randomAccessFile = new RandomAccessFile("./Database/" + databaseName + "/" + databaseName + ".db", "rw");
 		databaseFileChannel = randomAccessFile.getChannel();
 		MappedByteBuffer mbb = databaseFileChannel.map(FileChannel.MapMode.READ_WRITE, 0, databaseFileChannel.size());
 		return Parser.parser(mbb);
 	}
 
-	private void loadIndexs() throws IOException {
+	private void loadIndexes() throws IOException {
 		DirectoryStream<Path> DBDirectory;
 		DBDirectory = Files.newDirectoryStream(Paths.get("./Database/" + databaseName));
 		DBDirectory.forEach(x -> {

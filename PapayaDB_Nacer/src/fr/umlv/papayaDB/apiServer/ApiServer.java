@@ -41,13 +41,13 @@ public class ApiServer extends AbstractVerticle {
 		routerHttps.route("/*").handler(BodyHandler.create());
 
 		routerHttp.get("/all").handler(this::getAllDatabases);
-		routerHttp.get("/get/:name").handler(this::getDocumentByCriteria);
-		routerHttps.get("/getdatabase/:name").handler(this::getDatabase);
-		routerHttps.post("/createdatabase/:name").handler(this::createDatabase);
-		routerHttps.post("/uploadfile/:name").handler(this::uploadFile);
-		routerHttp.put("/insert/:name").handler(this::insertDocumentIntoDatabase);
+		routerHttp.get("/get/:databaseName").handler(this::getDocumentByCriteria);
+		routerHttps.get("/getdatabase/:databaseName").handler(this::getDatabase);
+		routerHttps.post("/createdatabase/:databaseName").handler(this::createDatabase);
+		routerHttps.post("/uploadfile/:databaseName").handler(this::uploadFile);
+		routerHttp.put("/insert/:databaseName").handler(this::insertDocumentIntoDatabase);
 		routerHttp.delete("/drop").handler(this::dropDocumentByName);
-		routerHttps.delete("/dropdatabase/:name").handler(this::dropDatabase);
+		routerHttps.delete("/dropdatabase/:databaseName").handler(this::dropDatabase);
 
 		routerHttp.route().handler(StaticHandler.create());
 		routerHttps.route().handler(StaticHandler.create());
@@ -75,7 +75,7 @@ public class ApiServer extends AbstractVerticle {
 	private void uploadFile(RoutingContext routingContext) {
 		routingContext.response().setStatusCode(201).putHeader("content-type", "application/json")
 				.end(databaseManager
-						.uploadFile(routingContext.request().getParam("name"), routingContext.getBodyAsJsonArray())
+						.uploadFile(routingContext.request().getParam("databaseName"), routingContext.getBodyAsJsonArray())
 						.map(Json::encodePrettily).collect(joining(", ", "[", "]")));
 	}
 
@@ -83,7 +83,7 @@ public class ApiServer extends AbstractVerticle {
 		try {
 			routingContext.response().setStatusCode(201).putHeader("content-type", "application/json")
 					.end(databaseManager
-							.insertDocumentIntoDatabase(routingContext.request().getParam("name"),
+							.insertDocumentIntoDatabase(routingContext.request().getParam("databaseName"),
 									routingContext.getBodyAsJson())
 							.map(Json::encodePrettily).collect(joining(", ", "[", "]")));
 		} catch (IOException e) {
@@ -95,7 +95,7 @@ public class ApiServer extends AbstractVerticle {
 		if (isAuthentified(routingContext.request())) {
 			try {
 				routingContext.response().setStatusCode(201).putHeader("content-type", "application/json")
-						.end(databaseManager.createDatabase(routingContext.request().getParam("name"))
+						.end(databaseManager.createDatabase(routingContext.request().getParam("databaseName"))
 								.map(Json::encodePrettily).collect(joining(", ", "[", "]")));
 			} catch (IllegalStateException ise) {
 				routingContext.response().setStatusCode(400).putHeader("content-type", "application/json").end();
@@ -111,7 +111,7 @@ public class ApiServer extends AbstractVerticle {
 		try {
 			routingContext.response().setStatusCode(201).putHeader("content-type", "application/json")
 					.end(databaseManager
-							.getDocumentByCriteria(routingContext.request().getParam("name"),
+							.getDocumentByCriteria(routingContext.request().getParam("databaseName"),
 									routingContext.getBodyAsString())
 							.map(Json::encodePrettily).collect(joining(", ", "[", "]")));
 		} catch (IOException e) {
@@ -123,7 +123,7 @@ public class ApiServer extends AbstractVerticle {
 		try {
 			routingContext.response().setStatusCode(201).putHeader("content-type", "application/json")
 					.end(databaseManager
-							.dropDocumentByName(routingContext.request().getParam("name"),
+							.dropDocumentByName(routingContext.request().getParam("databaseName"),
 									routingContext.getBodyAsString())
 							.map(Json::encodePrettily).collect(joining(", ", "[", "]")));
 		} catch (IOException e) {
@@ -134,7 +134,7 @@ public class ApiServer extends AbstractVerticle {
 	private void getDatabase(RoutingContext routingContext) {
 		try {
 			routingContext.response().setStatusCode(200).putHeader("content-type", "application/json")
-					.end(databaseManager.getDatabaseDocuments(routingContext.request().getParam("name"))
+					.end(databaseManager.getDatabaseDocuments(routingContext.request().getParam("databaseName"))
 							.map(Json::encodePrettily).collect(joining(", ", "[", "]")));
 		} catch (IOException e) {
 
@@ -146,7 +146,7 @@ public class ApiServer extends AbstractVerticle {
 		if (isAuthentified(routingContext.request())) {
 			try {
 				routingContext.response().setStatusCode(200).putHeader("content-type", "application/json")
-						.end(databaseManager.dropDatabase(routingContext.request().getParam("name"))
+						.end(databaseManager.dropDatabase(routingContext.request().getParam("databaseName"))
 								.map(Json::encodePrettily).collect(joining(", ", "[", "]")));
 			} catch (IOException e) {
 				routingContext.response().setStatusCode(500).putHeader("content-type", "application/json").end();

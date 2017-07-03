@@ -97,6 +97,7 @@ public class ApiClient {
 	 */
 	@DatabaseQuery("CREATE")
 	public String insertDocumentIntoDatabase(String databaseName, String body) {
+		// CREATE -> test {"sname_doc":"test","idate_of_creating":"50"}
 		HttpResponse response;
 		try {
 			response = HttpClient.getDefault().request(httpUri.resolve("/insert/" + databaseName))
@@ -105,6 +106,7 @@ public class ApiClient {
 			if (response.statusCode() == 201) {
 				return "success";
 			}
+			System.err.println("FAILED :" + response.statusCode());
 			return "failed";
 		} catch (IOException | InterruptedException e) {
 			return "Request failed";
@@ -145,10 +147,23 @@ public class ApiClient {
 		}
 	}
 
+	static {
+		// for localhost testing only
+		javax.net.ssl.HttpsURLConnection.setDefaultHostnameVerifier(new javax.net.ssl.HostnameVerifier() {
+
+			public boolean verify(String hostname, javax.net.ssl.SSLSession sslSession) {
+				if (hostname.equals("localhost")) {
+					return true;
+				}
+				return false;
+			}
+		});
+	}
+
 	/**
 	 * Envoi une requete HTTPS au serveur REST pour supprimer une BDD
 	 * 
-	 * @param name
+	 * @param databaseName
 	 *            nom de la BDD a supprimer
 	 * @param logPass
 	 *            couple login:password pour se connecter au gestionnaire de BDD
@@ -157,10 +172,10 @@ public class ApiClient {
 	 *         etre effectuee.
 	 */
 	@DatabaseQuery("DROP DATABASE")
-	public String dropDatabase(String name, String logPass) {
+	public String dropDatabase(String databaseName, String logPass) {
 		try {
-			HttpsURLConnection httpsConnection = (HttpsURLConnection) httpsUri.resolve("/dropdatabase/" + name).toURL()
-					.openConnection();
+			HttpsURLConnection httpsConnection = (HttpsURLConnection) httpsUri.resolve("/dropdatabase/" + databaseName)
+					.toURL().openConnection();
 			httpsConnection.setRequestProperty("Accept-Language", "en-US,en;q=0.5");
 			httpsConnection.setRequestProperty("Connection", "Close");
 			httpsConnection.setRequestProperty("Authorization", "Basic " + Decoder.encode(logPass));
@@ -168,11 +183,12 @@ public class ApiClient {
 			httpsConnection.setDoOutput(true);
 			if (httpsConnection.getResponseCode() == 200) {
 				httpsConnection.disconnect();
-				return "success";
+				return "SUCCESS : the database " + databaseName + " is dropped";
 			}
 			httpsConnection.disconnect();
-			return "failed";
+			return "FAILED : " + httpsConnection.getResponseCode() + " " + httpsConnection.getResponseMessage();
 		} catch (IOException e) {
+			e.printStackTrace();
 			return "request failed";
 		}
 	}

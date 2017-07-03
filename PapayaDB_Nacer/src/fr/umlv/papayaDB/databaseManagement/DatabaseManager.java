@@ -21,11 +21,11 @@ public class DatabaseManager implements Queryable {
 	private final HashMap<String, DatabaseInMemory> databasesInMemory = new HashMap<>();
 
 	private class DatabaseInMemory {
-		private Database database;
+		Database database;
 		private Thread thread = unloadUnusedDatabase();
 
-		DatabaseInMemory(String nameOfDatabase) throws IOException {
-			this.database = new Database(nameOfDatabase);
+		DatabaseInMemory(String databaseName) throws IOException {
+			this.database = new Database(databaseName);
 			thread.start();
 		}
 
@@ -86,53 +86,49 @@ public class DatabaseManager implements Queryable {
 		if (!databasesInMemory.containsKey(nameOfDatabase)) {
 			return;
 		}
-		DatabaseInMemory databaseToDrop = databasesInMemory.remove(nameOfDatabase); 
-		databaseToDrop.database.unloadDatabase(); 
-		databaseToDrop.database = null; 
+		DatabaseInMemory databaseToDrop = databasesInMemory.remove(nameOfDatabase);
+		databaseToDrop.database.unloadDatabase();
+		databaseToDrop.database = null;
 	}
 
 	/**
 	 * Drop the database corresponding to the name
 	 * 
-	 * @param name
+	 * @param databaseName
 	 *            = The name of the database
 	 * @return a empty Stream
 	 * @throws IOException
 	 *             if the database doesn't exist
 	 */
 	@Override
-	public Stream<Document> dropDatabase(String name) throws IOException {
+	public Stream<Document> dropDatabase(String databaseName) throws IOException {
 		synchronized (databasesInMemory) {
-			unloadDatabaseFromMemory(name); // Delete all informations referring
-											// to the
-			// database in the DataBase object
-			dropDBInPhysicalStorage(name); // Delete all files referring to the
-											// database on the physical storage
+			if (PapayaUtils.databaseExists(databaseName)) {
+				unloadDatabaseFromMemory(databaseName);
+				dropDatabaseFromDisk(databaseName);
+			} else {
+				throw new IllegalStateException("Database not found");
+			}
 		}
 		return Arrays.stream(new Document[0]);
 	}
 
-	private Stream<Document> dropDBInPhysicalStorage(String nameOfDatabase) throws IOException {
-		Path pathDBDirectory = Paths.get(PATH_OF_DATABASE_DIRECTORY + nameOfDatabase + "/");
-		DirectoryStream<Path> DBDirectory;
+	private Stream<Document> dropDatabaseFromDisk(String nameOfDatabase) throws IOException {
+		Path pathDatabaseDirectory = Paths.get(PATH_OF_DATABASE_DIRECTORY + nameOfDatabase + "/");
+		DirectoryStream<Path> databaseDirectory;
 		try {
-			DBDirectory = Files.newDirectoryStream(pathDBDirectory);
+			databaseDirectory = Files.newDirectoryStream(pathDatabaseDirectory);
 		} catch (IOException e) {
 			return null;
 		}
-
-		DBDirectory.forEach(x -> {
+		databaseDirectory.forEach(x -> {
 			x.toFile().delete();
 		});
-		DBDirectory.close();
-
+		databaseDirectory.close();
 		try {
-			Files.delete(pathDBDirectory); // Delete the repository of the
-											// database
-											// and all its contents
+			Files.delete(pathDatabaseDirectory);
 		} catch (IOException e) {
-			return null; // If the repository is not found, it's not necessary
-							// to throw an IOException
+			return null;
 		}
 		return null;
 	}
@@ -188,6 +184,7 @@ public class DatabaseManager implements Queryable {
 		if (databaseInMemory == null) {
 			databasesInMemory.put(databaseName, new DatabaseInMemory(databaseName));
 		}
+		System.out.println("DATABASE IN MEMORY : " + databaseInMemory.database.databaseName);
 		return databaseInMemory.useDatabase();
 	}
 
@@ -226,7 +223,11 @@ public class DatabaseManager implements Queryable {
 	@Override
 	public Stream<Document> insertDocumentIntoDatabase(String databaseName, JsonObject documentContent)
 			throws IOException {
-		getDatabase(databaseName).insertDocument(documentContent);
+		if (PapayaUtils.databaseExists(databaseName)) {
+			getDatabase(databaseName).insertDocument(documentContent);
+		} else {
+			throw new IllegalArgumentException("Tha requested database does not exist");
+		}
 		return Arrays.stream(new Document[0]);
 	}
 
