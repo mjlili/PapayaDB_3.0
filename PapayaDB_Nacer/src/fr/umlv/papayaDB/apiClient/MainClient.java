@@ -7,23 +7,23 @@ import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.Scanner;
 
-import fr.umlv.papayaDB.apiClient.ApiClient.DBQuery;
+import fr.umlv.papayaDB.apiClient.ApiClient.DatabaseQuery;
 
 public class MainClient {
 
-	public static ClassValue<Method[]> cv = new ClassValue<Method[]>() {
+	public static ClassValue<Method[]> CLASS_VALUE = new ClassValue<Method[]>() {
 		@Override
 		protected Method[] computeValue(Class<?> type) {
 			return type.getMethods();
 		}
 	};
 
-	private static String call(Method method, Object receiver, Object[] arg) {
+	private static String call(Method method, Object receiver, Object[] args) {
 		try {
-			if (arg.length > 1) {
-				return (String) method.invoke(receiver, arg[0], arg[1]);
+			if (args.length > 1) {
+				return (String) method.invoke(receiver, args[0], args[1]);
 			}
-			return (String) method.invoke(receiver, arg[0]);
+			return (String) method.invoke(receiver, args[0]);
 
 		} catch (IllegalAccessException e) {
 			throw new IllegalStateException("should not happen");
@@ -57,15 +57,22 @@ public class MainClient {
 					break;
 				}
 				try {
-					String[] commande = userQuery.split("\\s->\\s", 2);
-					String[] argument = commande[1].split("\\s");
-					Arrays.stream(cv.get(httpClient.getClass())).filter(m -> m.isAnnotationPresent(DBQuery.class))
-							.filter(m -> m.getAnnotation(DBQuery.class).value().equalsIgnoreCase(commande[0]))
-							.forEach(m -> System.out.println(call(m, httpClient, argument)));
+					String[] command = userQuery.split("\\s->\\s", 2);
+					if (command.length > 1) {
+						String[] arguments = command[1].split("\\s");
+						Arrays.stream(CLASS_VALUE.get(httpClient.getClass()))
+								.filter(method -> method.isAnnotationPresent(DatabaseQuery.class))
+								.filter(method -> method.getAnnotation(DatabaseQuery.class).value()
+										.equalsIgnoreCase(command[0]))
+								.forEach(method -> System.out.println(call(method, httpClient, arguments)));
+					} else if (command[0].equalsIgnoreCase("GET ALL DATABASES")) {
+						System.out.println(httpClient.getAllDatabases());
+					} else {
+						System.out.println("request wrong unrecognize, please respect the syntax.");
+					}
 				} catch (IllegalArgumentException | IndexOutOfBoundsException e) {
-					System.out.println("request wrong unrecognize, please respect the syntax.");
+					System.out.println("Should not Happen ");
 				}
-				System.out.println(httpClient.getAllDatabases());
 			}
 		}
 	}

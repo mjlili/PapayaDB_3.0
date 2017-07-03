@@ -4,7 +4,7 @@ import static java.util.stream.Collectors.joining;
 
 import java.io.IOException;
 
-import fr.umlv.papayaDB.databaseManagementSystem.DataBaseManagementSystem;
+import fr.umlv.papayaDB.databaseManagement.DatabaseManager;
 import fr.umlv.papayaDB.utils.Decoder;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.http.HttpHeaders;
@@ -26,7 +26,7 @@ import io.vertx.ext.web.handler.StaticHandler;
  *
  */
 public class ApiServer extends AbstractVerticle {
-	private final DataBaseManagementSystem databaseManager = new DataBaseManagementSystem();
+	private final DatabaseManager databaseManager = new DatabaseManager();
 
 	/**
 	 * demarrer les serveurs HTTP sur le port 8080 et HTTPS sur le port 8070
@@ -34,23 +34,25 @@ public class ApiServer extends AbstractVerticle {
 	@Override
 	public void start() {
 
-		Router router = Router.router(vertx);
+		Router routerHttp = Router.router(vertx);
 		Router routerHttps = Router.router(vertx);
 
-		router.route("/*").handler(BodyHandler.create());
+		routerHttp.route("/*").handler(BodyHandler.create());
 		routerHttps.route("/*").handler(BodyHandler.create());
-		router.get("/all").handler(this::getAllDatabases);
-		router.put("/insert/:name").handler(this::insertDocumentIntoDatabase);
-		routerHttps.post("/createdatabase/:name").handler(this::createDatabase);
-		routerHttps.delete("/dropdatabase/:name").handler(this::dropDatabase);
-		routerHttps.get("/getdatabase/:name").handler(this::getDatabase);
-		router.get("/get/:name").handler(this::getDocumentByCriteria);
-		router.delete("/drop").handler(this::dropDocumentByName);
 
-		router.route().handler(StaticHandler.create());
+		routerHttp.get("/all").handler(this::getAllDatabases);
+		routerHttp.get("/get/:name").handler(this::getDocumentByCriteria);
+		routerHttps.get("/getdatabase/:name").handler(this::getDatabase);
+		routerHttps.post("/createdatabase/:name").handler(this::createDatabase);
+		routerHttps.post("/uploadfile/:name").handler(this::uploadFile);
+		routerHttp.put("/insert/:name").handler(this::insertDocumentIntoDatabase);
+		routerHttp.delete("/drop").handler(this::dropDocumentByName);
+		routerHttps.delete("/dropdatabase/:name").handler(this::dropDatabase);
+
+		routerHttp.route().handler(StaticHandler.create());
 		routerHttps.route().handler(StaticHandler.create());
 
-		vertx.createHttpServer().requestHandler(router::accept).listen(8080);
+		vertx.createHttpServer().requestHandler(routerHttp::accept).listen(8080);
 		vertx.createHttpServer(createHttpServerOptions()).requestHandler(routerHttps::accept).listen(8070);
 		System.out
 				.println("The Server is listening for HTTP requests on port 8080 and for HTTPS requests on port 8070");
@@ -68,6 +70,13 @@ public class ApiServer extends AbstractVerticle {
 		} catch (IOException e) {
 			routingContext.response().setStatusCode(404).putHeader("content-type", "application/json").end();
 		}
+	}
+
+	private void uploadFile(RoutingContext routingContext) {
+		routingContext.response().setStatusCode(201).putHeader("content-type", "application/json")
+				.end(databaseManager
+						.uploadFile(routingContext.request().getParam("name"), routingContext.getBodyAsJsonArray())
+						.map(Json::encodePrettily).collect(joining(", ", "[", "]")));
 	}
 
 	private void insertDocumentIntoDatabase(RoutingContext routingContext) {
@@ -88,8 +97,8 @@ public class ApiServer extends AbstractVerticle {
 				routingContext.response().setStatusCode(201).putHeader("content-type", "application/json")
 						.end(databaseManager.createDatabase(routingContext.request().getParam("name"))
 								.map(Json::encodePrettily).collect(joining(", ", "[", "]")));
-			} catch (IllegalArgumentException e) {
-				routingContext.response().setStatusCode(201).putHeader("content-type", "application/json").end();
+			} catch (IllegalStateException ise) {
+				routingContext.response().setStatusCode(400).putHeader("content-type", "application/json").end();
 			} catch (IOException e) {
 				routingContext.response().setStatusCode(500).putHeader("content-type", "application/json").end();
 			}
