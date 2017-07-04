@@ -9,24 +9,34 @@ import java.util.List;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.MappingIterator;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
-import io.vertx.core.json.JsonObject;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 public class PapayaUtils {
 
-	public static List<JsonObject> extractJsonObjectsFromFile(String file) throws JsonParseException, IOException {
-		ObjectMapper mapper = new ObjectMapper();
-		mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-		List<JsonObject> documents = new LinkedList<JsonObject>();
+	public static List<ObjectNode> extractJsonObjectsFromFile(String file) throws JsonParseException, IOException {
 		JsonParser jsonParser = new JsonFactory().createParser(new File(file));
-		MappingIterator<JsonObject> jsonObjectsIterator = mapper.readValues(jsonParser, JsonObject.class);
-		while (jsonObjectsIterator.hasNext()) {
-			JsonObject jsonObject = jsonObjectsIterator.next();
-			jsonObject.putNull("_id");
-			documents.add(jsonObject);
+		List<ObjectNode> documents = extractJsonObjectsByJsonParser(jsonParser);
+		return documents;
+	}
+
+	public static List<ObjectNode> extractJsonObjectsFromString(String string) throws JsonParseException, IOException {
+		JsonParser jsonParser = new JsonFactory().createParser(string);
+		List<ObjectNode> documents = extractJsonObjectsByJsonParser(jsonParser);
+		return documents;
+	}
+
+	private static List<ObjectNode> extractJsonObjectsByJsonParser(JsonParser jsonParser)
+			throws IOException, JsonProcessingException {
+		ObjectMapper mapper = new ObjectMapper();
+		List<ObjectNode> documents = new LinkedList<ObjectNode>();
+		MappingIterator<ObjectNode> objectNodesIterator = mapper.readValues(jsonParser, ObjectNode.class);
+		while (objectNodesIterator.hasNext()) {
+			ObjectNode objectNode = objectNodesIterator.next();
+			objectNode.putNull("_id");
+			documents.add(objectNode);
 		}
 		return documents;
 	}

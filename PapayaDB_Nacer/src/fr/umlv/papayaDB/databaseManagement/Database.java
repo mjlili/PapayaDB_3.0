@@ -16,15 +16,15 @@ import java.util.TreeMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Stream;
 
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
 import fr.umlv.papayaDB.databaseManagement.document.Document;
 import fr.umlv.papayaDB.databaseManagement.document.GenericValue;
-import fr.umlv.papayaDB.databaseManagement.document.IntegerValue;
 import fr.umlv.papayaDB.databaseManagement.document.Parser;
-import io.vertx.core.json.JsonObject;
 
 public class Database {
-	List<Document> documents;
-	String databaseName;
+	private List<Document> documents;
+	private String databaseName;
 	private final HashMap<String, TreeMap<Object, List<Document>>> indexes = new HashMap<>();
 	private FileChannel databaseFileChannel;
 	private RandomAccessFile randomAccessFile;
@@ -43,6 +43,14 @@ public class Database {
 		documents = loadDatabase();
 		loadIndexes();
 		launchThreadDelete();
+	}
+
+	public String getDatabaseName() {
+		return this.databaseName;
+	}
+
+	public List<Document> getDocuments() {
+		return this.documents;
 	}
 
 	private void launchThreadDelete() {
@@ -69,11 +77,10 @@ public class Database {
 
 	private void createNewDatabase() throws IOException {
 		synchronized (indexes) {
-			Files.createFile(Paths.get(DatabaseManager.PATH_OF_DATABASE_DIRECTORY + databaseName + "/"
-					+ databaseName + ".dbtmp"));
+			Files.createFile(Paths
+					.get(DatabaseManager.PATH_OF_DATABASE_DIRECTORY + databaseName + "/" + databaseName + ".dbtmp"));
 			RandomAccessFile raf = new RandomAccessFile(
-					DatabaseManager.PATH_OF_DATABASE_DIRECTORY + databaseName + "/" + databaseName + ".dbtmp",
-					"rw");
+					DatabaseManager.PATH_OF_DATABASE_DIRECTORY + databaseName + "/" + databaseName + ".dbtmp", "rw");
 			FileChannel newFileDB = raf.getChannel();
 			databaseFileChannel.close();
 			databaseFileChannel = newFileDB;
@@ -86,13 +93,12 @@ public class Database {
 				}
 			});
 			documents = newDocs;
-			Files.delete(Paths.get(
-					DatabaseManager.PATH_OF_DATABASE_DIRECTORY + databaseName + "/" + databaseName + ".db"));
+			Files.delete(
+					Paths.get(DatabaseManager.PATH_OF_DATABASE_DIRECTORY + databaseName + "/" + databaseName + ".db"));
 			Files.move(
-					Paths.get(DatabaseManager.PATH_OF_DATABASE_DIRECTORY + databaseName + "/" + databaseName
-							+ ".dbtmp"),
-					Paths.get(DatabaseManager.PATH_OF_DATABASE_DIRECTORY + databaseName + "/" + databaseName
-							+ ".db"));
+					Paths.get(
+							DatabaseManager.PATH_OF_DATABASE_DIRECTORY + databaseName + "/" + databaseName + ".dbtmp"),
+					Paths.get(DatabaseManager.PATH_OF_DATABASE_DIRECTORY + databaseName + "/" + databaseName + ".db"));
 		}
 	}
 
@@ -107,13 +113,13 @@ public class Database {
 		randomAccessFile = new RandomAccessFile("./Database/" + databaseName + "/" + databaseName + ".db", "rw");
 		databaseFileChannel = randomAccessFile.getChannel();
 		MappedByteBuffer mbb = databaseFileChannel.map(FileChannel.MapMode.READ_WRITE, 0, databaseFileChannel.size());
-		return Parser.parser(mbb);
+		return Parser.parse(mbb);
 	}
 
 	private void loadIndexes() throws IOException {
-		DirectoryStream<Path> DBDirectory;
-		DBDirectory = Files.newDirectoryStream(Paths.get("./Database/" + databaseName));
-		DBDirectory.forEach(x -> {
+		DirectoryStream<Path> databaseDirectory;
+		databaseDirectory = Files.newDirectoryStream(Paths.get("./Database/" + databaseName));
+		databaseDirectory.forEach(x -> {
 			if (x.toFile().getName().startsWith("index_")) {
 				try (RandomAccessFile raf = new RandomAccessFile(
 						"./Database/" + databaseName + "/" + x.toFile().getName(), "r")) {
@@ -125,13 +131,13 @@ public class Database {
 				}
 			}
 		});
-		DBDirectory.close();
+		databaseDirectory.close();
 	}
 
+	// Trouver l'erreur de NullPointerException
 	private void loadIndex(String fieldIndex, MappedByteBuffer indexMbb) {
 		TreeMap<Object, List<Document>> index = new TreeMap<>();
 		byte b;
-
 		for (indexMbb.position(0); indexMbb.position() < indexMbb.limit();) {
 			StringBuilder value = new StringBuilder();
 			for (b = indexMbb.get(); b != ',' && indexMbb.position() < indexMbb.limit(); b = indexMbb.get()) {
@@ -139,9 +145,9 @@ public class Database {
 			}
 			if (b != ',')
 				value.append((char) b);
-			int indexOfDocument = Integer.valueOf(value.toString());
+			int documentIndex = Integer.valueOf(value.toString());
 			documents.forEach(x -> {
-				if (((int) x.getValues().get("indexOfDocument").getValue()) == indexOfDocument)
+				if (((int) x.getValues().get("documentIndex").getValue()) == documentIndex)
 					addDocumentAtIndex(index, x, fieldIndex);
 			});
 		}
@@ -228,12 +234,14 @@ public class Database {
 	 * @throws IOException
 	 *             if it is not possible to create on the physical storage
 	 */
-	public void insertDocument(JsonObject documentContent) throws IOException {
+	public void insertDocument(ObjectNode documentContent) throws IOException {
 		synchronized (indexes) {
 			// if (!documentContent.containsKey("name_doc"))
-			// throw new IllegalArgumentException("the body must contains the name_doc field");
+			// throw new IllegalArgumentException("the body must contains the
+			// name_doc field");
+
+			documentContent.put("documentIndex", Integer.toString(documents.size() + 1));
 			Document document = Parser.parseJSONToDocument(documentContent);
-			document.getValues().put("documentIndex", new IntegerValue(Integer.toString(documents.size() + 1)));
 			documents.add(document);
 			document.getValues().forEach((x, y) -> {
 				if (!indexes.containsKey(x))
@@ -245,34 +253,35 @@ public class Database {
 				}
 			});
 			addDocumentOnDisk(document);
+
+			// Document newDocument = new Document(documentContent);
+			// documents.add(newDocument);
+			// addDocumentOnDisk(newDocument);
 		}
 	}
 
-	private void addDocumentOnDisk(Document doc) throws IOException {
-		String s = Parser.getStringToDocument(doc);
+	private void addDocumentOnDisk(Document document) throws IOException {
+		String s = Parser.getStringToDocument(document);
 		databaseFileChannel.write(ByteBuffer.wrap(s.getBytes()));
+		// databaseFileChannel.write(ByteBuffer.wrap(document.getJsonContent().toString().getBytes()));
 	}
 
 	private void updateIndexOnDisk(String indexName) throws IOException {
-		Files.createFile(Paths.get(
-				DatabaseManager.PATH_OF_DATABASE_DIRECTORY + databaseName + "/" + "tmpindex_" + indexName));
+		Files.createFile(
+				Paths.get(DatabaseManager.PATH_OF_DATABASE_DIRECTORY + databaseName + "/" + "tmpindex_" + indexName));
 		try (RandomAccessFile raf = new RandomAccessFile(
-				DatabaseManager.PATH_OF_DATABASE_DIRECTORY + databaseName + "/" + "tmpindex_" + indexName,
-				"rw")) {
+				DatabaseManager.PATH_OF_DATABASE_DIRECTORY + databaseName + "/" + "tmpindex_" + indexName, "rw")) {
 			try (FileChannel newFileDB = raf.getChannel()) {
 				newFileDB.write(ByteBuffer.wrap(getStringOfIndex(indexName).getBytes()));
 			}
 		}
-		if (Files.exists(Paths.get(
-				DatabaseManager.PATH_OF_DATABASE_DIRECTORY + databaseName + "/" + "index_" + indexName))) {
-			Files.delete(Paths.get(
-					DatabaseManager.PATH_OF_DATABASE_DIRECTORY + databaseName + "/" + "index_" + indexName));
+		if (Files.exists(
+				Paths.get(DatabaseManager.PATH_OF_DATABASE_DIRECTORY + databaseName + "/" + "index_" + indexName))) {
+			Files.delete(
+					Paths.get(DatabaseManager.PATH_OF_DATABASE_DIRECTORY + databaseName + "/" + "index_" + indexName));
 		}
-		Files.move(
-				Paths.get(DatabaseManager.PATH_OF_DATABASE_DIRECTORY + databaseName + "/" + "tmpindex_"
-						+ indexName),
-				Paths.get(DatabaseManager.PATH_OF_DATABASE_DIRECTORY + databaseName + "/" + "index_"
-						+ indexName));
+		Files.move(Paths.get(DatabaseManager.PATH_OF_DATABASE_DIRECTORY + databaseName + "/" + "tmpindex_" + indexName),
+				Paths.get(DatabaseManager.PATH_OF_DATABASE_DIRECTORY + databaseName + "/" + "index_" + indexName));
 	}
 
 	private String getStringOfIndex(String indexName) {

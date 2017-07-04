@@ -1,9 +1,7 @@
 package fr.umlv.papayaDB.apiClient;
 
-import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.ObjectOutputStream;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -15,14 +13,16 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.net.ssl.HttpsURLConnection;
 
 import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import fr.umlv.papayaDB.utils.Decoder;
 import fr.umlv.papayaDB.utils.PapayaUtils;
-import io.vertx.core.json.JsonObject;
+import io.vertx.core.json.Json;
 
 /**
  * @author JLILI Mohamed Kacem & REZGUI Ichrak
@@ -72,31 +72,27 @@ public class ApiClient {
 		return "FAILED : No databases to display";
 	}
 
-	// IL FAUT REGARDER COMMENT CORRIGER LE PROBLèME
 	@DatabaseQuery("UPLOAD FILE")
 	public String uploadFileContent(String databaseName, String filePath) {
-		List<JsonObject> jsonObjects;
-		byte[] bytes;
+		// upload file -> test testJSON.json
+		List<ObjectNode> jsonObjects;
 		try {
 			jsonObjects = PapayaUtils.extractJsonObjectsFromFile(filePath);
-			ByteArrayOutputStream bos = new ByteArrayOutputStream();
-			ObjectOutputStream oos = new ObjectOutputStream(bos);
-			oos.writeObject(jsonObjects);
-			bytes = bos.toByteArray();
 		} catch (JsonParseException e1) {
 			return "Json File content is currupted";
 		} catch (IOException e1) {
 			e1.printStackTrace();
 			return "Internal error reading input file";
 		}
-
 		HttpResponse response;
 		try {
 			response = HttpClient.getDefault().request(httpUri.resolve("/uploadfile/" + databaseName))
 					.headers("Accept-Language", "en-US,en;q=0.5", "Connection", "Close")
-					.body(HttpRequest.fromByteArray(bytes)).PUT().response();
+					.body(HttpRequest
+							.fromString(jsonObjects.stream().map(Json::encodePrettily).collect(Collectors.joining())))
+					.PUT().response();
 			if (response.statusCode() == 201) {
-				return "success";
+				return "SUCCESS : File content is uploaded successfully on database " + databaseName;
 			}
 			return "failed";
 		} catch (IOException | InterruptedException e) {

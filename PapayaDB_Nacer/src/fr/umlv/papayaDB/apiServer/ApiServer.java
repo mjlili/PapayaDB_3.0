@@ -4,6 +4,9 @@ import static java.util.stream.Collectors.joining;
 
 import java.io.IOException;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
 import fr.umlv.papayaDB.databaseManagement.DatabaseManager;
 import fr.umlv.papayaDB.utils.Decoder;
 import io.vertx.core.AbstractVerticle;
@@ -75,17 +78,19 @@ public class ApiServer extends AbstractVerticle {
 	private void uploadFile(RoutingContext routingContext) {
 		routingContext.response().setStatusCode(201).putHeader("content-type", "application/json")
 				.end(databaseManager
-						.uploadFile(routingContext.request().getParam("databaseName"), routingContext.getBodyAsJsonArray())
+						.uploadFile(routingContext.request().getParam("databaseName"), routingContext.getBodyAsString())
 						.map(Json::encodePrettily).collect(joining(", ", "[", "]")));
 	}
 
 	private void insertDocumentIntoDatabase(RoutingContext routingContext) {
 		try {
-			routingContext.response().setStatusCode(201).putHeader("content-type", "application/json")
-					.end(databaseManager
-							.insertDocumentIntoDatabase(routingContext.request().getParam("databaseName"),
-									routingContext.getBodyAsJson())
-							.map(Json::encodePrettily).collect(joining(", ", "[", "]")));
+			routingContext.response().setStatusCode(201)
+					.putHeader("content-type", "application/json").end(
+							databaseManager
+									.insertDocumentIntoDatabase(routingContext.request().getParam("databaseName"),
+											(ObjectNode) new ObjectMapper()
+													.readTree(routingContext.getBodyAsJson().toString()))
+									.map(Json::encodePrettily).collect(joining(", ", "[", "]")));
 		} catch (IOException e) {
 			routingContext.response().setStatusCode(401).end();
 		}

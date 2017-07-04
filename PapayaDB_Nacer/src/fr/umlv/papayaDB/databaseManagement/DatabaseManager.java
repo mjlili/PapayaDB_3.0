@@ -8,12 +8,14 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.stream.Stream;
+
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import fr.umlv.papayaDB.databaseManagement.document.Document;
 import fr.umlv.papayaDB.utils.PapayaUtils;
-import io.vertx.core.json.JsonArray;
-import io.vertx.core.json.JsonObject;
 
 public class DatabaseManager implements Queryable {
 	final static String PATH_OF_DATABASE_DIRECTORY = "./Database/";
@@ -49,7 +51,7 @@ public class DatabaseManager implements Queryable {
 					}
 				}
 				try {
-					unloadDatabaseFromMemory(database.databaseName);
+					unloadDatabaseFromMemory(database.getDatabaseName());
 				} catch (IOException e) {
 					return;
 				}
@@ -177,7 +179,7 @@ public class DatabaseManager implements Queryable {
 	 */
 	@Override
 	public Stream<Document> getDatabaseDocuments(String databaseName) throws IOException {
-		return getDatabase(databaseName).documents.stream();
+		return getDatabase(databaseName).getDocuments().stream();
 	}
 
 	private Database getDatabase(String databaseName) throws IOException {
@@ -186,7 +188,7 @@ public class DatabaseManager implements Queryable {
 			databasesInMemory.put(databaseName, new DatabaseInMemory(databaseName));
 		}
 		databaseInMemory = databasesInMemory.get(databaseName);
-		System.out.println("DATABASE IN MEMORY : " + databaseInMemory.database.databaseName);
+		System.out.println("DATABASE IN MEMORY : " + databaseInMemory.database.getDatabaseName());
 		return databaseInMemory.useDatabase();
 	}
 
@@ -223,13 +225,12 @@ public class DatabaseManager implements Queryable {
 	 *             the physical storage
 	 */
 	@Override
-	public Stream<Document> insertDocumentIntoDatabase(String databaseName, JsonObject documentContent)
+	public Stream<Document> insertDocumentIntoDatabase(String databaseName, ObjectNode documentContent)
 			throws IOException {
 		if (PapayaUtils.databaseExists(databaseName)) {
-			System.err.println("DOCUMENT CONTENT : \n" + documentContent);
 			getDatabase(databaseName).insertDocument(documentContent);
 		} else {
-			throw new IllegalArgumentException("Tha requested database does not exist");
+			throw new IllegalArgumentException("The requested database does not exist");
 		}
 		return Arrays.stream(new Document[0]);
 	}
@@ -265,16 +266,26 @@ public class DatabaseManager implements Queryable {
 	 *             the physical storage
 	 */
 	@Override
-	public Stream<Document> uploadFile(String databaseName, JsonArray jsonObjects) {
+	public Stream<Document> uploadFile(String databaseName, String jsonObjects) {
 		Database database;
 		try {
 			database = getDatabase(databaseName);
 		} catch (IOException e) {
 			throw new IllegalArgumentException("The requested Database does not exist");
 		}
-		for (Object jsonObject : jsonObjects) {
+		List<ObjectNode> deserializedObjects = new ArrayList<>();
+		try {
+			deserializedObjects = PapayaUtils.extractJsonObjectsFromString(jsonObjects);
+		} catch (JsonParseException e1) {
+			System.out.println("Json File content is currupted");
+			return null;
+		} catch (IOException e1) {
+			System.out.println("Internal error reading input file");
+			return null;
+		}
+		for (ObjectNode objectNode : deserializedObjects) {
 			try {
-				database.insertDocument((JsonObject) jsonObject);
+				database.insertDocument(objectNode);
 			} catch (IOException e) {
 				throw new IllegalStateException("Cannot write values on database");
 			}
