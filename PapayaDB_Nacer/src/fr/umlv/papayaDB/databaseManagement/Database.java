@@ -146,10 +146,15 @@ public class Database {
 			if (b != ',')
 				value.append((char) b);
 			int documentIndex = Integer.valueOf(value.toString());
-			documents.forEach(x -> {
-				if (((int) x.getValues().get("documentIndex").getValue()) == documentIndex)
-					addDocumentAtIndex(index, x, fieldIndex);
-			});
+			for (Document document : documents) {
+				if (((int) document.getValues().get("documentIndex").getValue()) == documentIndex)
+					addDocumentAtIndex(index, document, fieldIndex);
+			}
+			// documents.forEach(x -> {
+			// if (((int) x.getValues().get("documentIndex").getValue()) ==
+			// documentIndex)
+			// addDocumentAtIndex(index, x, fieldIndex);
+			// });
 		}
 		indexes.put(fieldIndex, index);
 	}

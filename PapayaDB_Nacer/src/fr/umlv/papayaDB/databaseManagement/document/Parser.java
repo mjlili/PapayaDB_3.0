@@ -117,7 +117,7 @@ public class Parser {
 	private static String getValue(MappedByteBuffer mbb) {
 		StringBuilder value = new StringBuilder();
 
-		for (byte b = mbb.get(); b != ':' && b != ';'; b = mbb.get()) {
+		for (byte b = mbb.get(); b != ':' && b != ','; b = mbb.get()) {
 			value.append((char) b);
 		}
 		return value.toString();
