@@ -111,12 +111,12 @@ public class ApiClient {
 	 *         si elle a echouee ou "Request failed" si la requete n'a pas pu
 	 *         etre effectuee.
 	 */
-	@DatabaseQuery("CREATE")
+	@DatabaseQuery("INSERT DOCUMENT")
 	public String insertDocumentIntoDatabase(String databaseName, String body) {
-		// CREATE -> test {"sname_doc":"test","idate_of_creating":"50"}
+		// INSERT DOCUMENT -> test {"sname_doc":"test","idate_of_creating":"50"}
 		HttpResponse response;
 		try {
-			response = HttpClient.getDefault().request(httpUri.resolve("/insert/" + databaseName))
+			response = HttpClient.getDefault().request(httpUri.resolve("/insertdocument/" + databaseName))
 					.headers("Accept-Language", "en-US,en;q=0.5", "Connection", "Close")
 					.body(HttpRequest.fromString(body)).PUT().response();
 			if (response.statusCode() == 201) {
@@ -245,7 +245,7 @@ public class ApiClient {
 	 *         si elle a echouee ou "Request failed" si la requete n'a pas pu
 	 *         etre effectuee.
 	 */
-	@DatabaseQuery("DROP")
+	@DatabaseQuery("DROP DOCUMENT")
 	public String dropDocumentByName(String name, String criteria) {
 		try {
 			HttpURLConnection httpCon = (HttpURLConnection) httpUri.resolve("/drop/" + name).toURL().openConnection();
@@ -279,7 +279,7 @@ public class ApiClient {
 	 *         "failed" si elle a echouee ou "Request failed" si la requete n'a
 	 *         pas pu etre effectuee.
 	 */
-	@DatabaseQuery("GET")
+	@DatabaseQuery("GET DOCUMENT")
 	public String getDocumentByCriteria(String name, String criteria) {
 		HttpResponse response;
 		try {

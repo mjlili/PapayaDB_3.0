@@ -159,15 +159,15 @@ public class Database {
 		indexes.put(fieldIndex, index);
 	}
 
-	private void addDocumentAtIndex(TreeMap<Object, List<Document>> index, Document doc, String fieldIndex) {
-		GenericValue value = doc.getValues().get(fieldIndex);
+	private void addDocumentAtIndex(TreeMap<Object, List<Document>> index, Document document, String fieldIndex) {
+		GenericValue value = document.getValues().get(fieldIndex);
 		if (!(index.containsKey(value.getValue()))) {
 			index.put(value.getValue(), new CopyOnWriteArrayList<>());
 		}
-		index.get(value.getValue()).add(doc);
+		index.get(value.getValue()).add(document);
 	}
 
-	private void dropADocInAIndex(TreeMap<Object, List<Document>> index, Document doc, String fieldIndex) {
+	private void dropDocumentAtIndex(TreeMap<Object, List<Document>> index, Document doc, String fieldIndex) {
 		synchronized (indexes) {
 			GenericValue value = doc.getValues().get(fieldIndex);
 			index.get(value.getValue()).remove(doc);
@@ -199,7 +199,7 @@ public class Database {
 	 *         the database
 	 */
 	public Stream<Document> get(String request) {
-		return getDocumentsOfCriters(request);
+		return getDocumentsByCriterias(request);
 	}
 
 	/**
@@ -219,7 +219,7 @@ public class Database {
 				doc.setToDelete();
 				nbToDelete++;
 				doc.getValues().forEach((a, b) -> {
-					dropADocInAIndex(indexes.get(a), doc, a);
+					dropDocumentAtIndex(indexes.get(a), doc, a);
 					try {
 						updateIndexOnDisk(a);
 					} catch (IOException e) {
@@ -255,6 +255,8 @@ public class Database {
 				try {
 					updateIndexOnDisk(x);
 				} catch (IOException e) {
+					System.err.println("Failed to update indexes");
+					e.printStackTrace();
 				}
 			});
 			addDocumentOnDisk(document);
@@ -298,17 +300,17 @@ public class Database {
 		return sb.toString();
 	}
 
-	private Stream<Document> getDocumentsOfCriters(String criters) {
+	private Stream<Document> getDocumentsByCriterias(String criterias) {
 		CopyOnWriteArrayList<Stream<Document>> res = new CopyOnWriteArrayList<>();
-		for (String criter : criters.split("and")) {
-			res.add(getDocumentsOfCriter(criter));
+		for (String criteria : criterias.split("and")) {
+			res.add(getDocumentsByCriteria(criteria));
 		}
 		return res.stream().flatMap(x -> x).distinct();
 	}
 
-	private Stream<Document> getDocumentsOfCriter(String criter) {
-		criter = criter.trim();
-		String[] values = criter.split("\"");
+	private Stream<Document> getDocumentsByCriteria(String criteria) {
+		criteria = criteria.trim();
+		String[] values = criteria.split("\"");
 		String field = values[1];
 		String op = values[2];
 		String criter1 = values[3];
