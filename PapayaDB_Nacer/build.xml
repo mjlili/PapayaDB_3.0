@@ -1,45 +1,53 @@
 <?xml version="1.0"?>
-<project name="ApiClient" default="compile">
+<project name="PapayaDB3.0" default="all" basedir=".">
+	<description>
+    Génération de l'application PapayaDB3.0
+  </description>
 
-	<target name="compile" description="compilation des classes">
-       	 <javac srcdir="src" destdir="classes" >
-	<classpath>
-	      <fileset dir = "libs">
-		<include name="vertx-core-3.3.3.jar"/>
-		<include name ="vertx-web-3.3.3.jar"/>
-	      </fileset>
-	  </classpath>
-	</javac>
-    	</target>
-
-	<target name="jar" >
-		<jar destfile="papaya-demo-1.0.jar" >
-    		<fileset dir="classes/fr/umlv/papayaDB/apiclient/"/>
-		<manifest>
-      			<attribute name="Main-Class" value="fr.umlv.papayaDB.apiclient.Main"/>
-    		</manifest>
-  		</jar>
+	<property name="src" location="src" />
+	<property name="packaging" location="." />
+	<property name="bin" location="classes" />
+	<property name="lib" location="libs" />
+	<property name="doc" location="docs/api" />
+	
+	<path id="classpath">
+		<fileset dir="${lib}">
+			<include name="**/*.jar" />
+		</fileset>
+		<fileset dir="${bin}">
+			<include name="*.class" />
+		</fileset>
+	</path>
+	<target name="init" description="Initialisation">
+		<tstamp />
+		<buildnumber file="numerobuild.txt" />
+		<echo message="Generation numero : ${build.number} du ${TODAY}" />
 	</target>
 
-	<target name="javadoc" description="Generation documentation">
-	    <javadoc destdir="docs/api" author="true" version="true" use="true" 
-	      package="true">
-		<fileset dir = "src">
-	        	<include name="**/*.java"/>
-	      </fileset>
-	   <classpath>
-	      <fileset dir = "libs">
-		<include name="vertx-core-3.3.3.jar"/>
-		<include name ="vertx-web-3.3.3.jar"/>
-	      </fileset>
-	  </classpath>	
-	    </javadoc>
-	  </target>
-
-	<target name="clean">
-		<delete dir="docs/api" />
-		<delete file="papaya-demo-1.0.jar" />
-		<delete dir="classes" />
-		<mkdir dir="classes" />
+	<target name="compile" depends="init" description="compilation">
+		<mkdir dir="${bin}" />
+		<javac srcdir="${src}" destdir="${bin}">
+			<classpath refid="classpath"/>
+		</javac>
+	</target>
+	<target name="clean" description="Delete all generated files">
+		<delete failonerror="false" includeEmptyDirs="true">
+			<fileset dir="." includes="papaya-demo-1.0.jar" />
+			<fileset dir="${bin}" />
+		</delete>
+	</target>
+	<target name="packaging">
+		<jar jarfile="papaya-demo-1.0.jar" basedir="src"/>
+	</target>
+	<target name="doc" depends="compile" description="Generation documentation">
+		<javadoc destdir="${doc}" author="true" version="true" use="true" package="true">
+			<fileset dir="${src}">
+				<include name="**/*.java" />
+			</fileset>
+			<classpath refid="classpath"/>
+		</javadoc>
+	</target>
+	<target name="all" depends="init, compile, packaging, doc" description="Generation complete">
+		<echo message="Generation complete." />
 	</target>
 </project>
